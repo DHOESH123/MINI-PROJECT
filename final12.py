@@ -242,8 +242,28 @@ def main():
         st.write(f"X-ray model loaded: {'✅' if xray_model is not None else '❌'}")
         st.write(f"CT Scan model loaded: {'✅' if ct_model is not None else '❌'}")
 
+    # ✅ MODALITY SELECTED FIRST (ONLY CHANGE)
+    st.subheader("Select Modality")
+    modality = st.radio("Select Modality:", ("X-ray (Pneumothorax)", "CT Scan (Brain Tumor)"))
+    modality = "xray" if "X-ray" in modality else "ct"
+
+    if modality == "xray":
+        seg_model = xray_model
+        diag_label = "Pneumothorax (suspected)"
+    else:
+        seg_model = ct_model
+        diag_label = "Brain tumor / lesion (suspected)"
+
+    if seg_model is None:
+        st.error("Segmentation model for selected modality is not available.")
+        return
+
+    # ⬇️ IMAGE UPLOAD COMES AFTER MODALITY
     st.subheader("Upload Image")
-    uploaded_file = st.file_uploader("Upload X-ray / CT Scan image", type=["png", "jpg", "jpeg", "tiff", "bmp"])
+    uploaded_file = st.file_uploader(
+        f"Upload {modality.upper()} image",
+        type=["png", "jpg", "jpeg", "tiff", "bmp"]
+    )
 
     if uploaded_file is None:
         st.info("Please upload an image to continue.")
@@ -263,23 +283,11 @@ def main():
             st.error(f"Error preprocessing image: {e}")
             return
 
-    modality = st.radio("Select Modality:", ("X-ray (Pneumothorax)", "CT Scan (Brain Tumor)"))
-    modality = "xray" if "X-ray" in modality else "ct"
-
-    if modality == "xray":
-        seg_model = xray_model
-        diag_label = "Pneumothorax (suspected)"
-    else:
-        seg_model = ct_model
-        diag_label = "Brain tumor / lesion (suspected)"
-
-    if seg_model is None:
-        st.error("Segmentation model for selected modality is not available.")
-        return
-
     with st.spinner("Running segmentation..."):
         try:
-            pred_mask, binary_mask, pct, mask_pixels, total_pixels = predict_segmentation(seg_model, batch_img, threshold=confidence_threshold)
+            pred_mask, binary_mask, pct, mask_pixels, total_pixels = predict_segmentation(
+                seg_model, batch_img, threshold=confidence_threshold
+            )
             st.success("Segmentation completed successfully.")
         except Exception as e:
             st.error(f"Error during segmentation: {e}")
@@ -294,12 +302,12 @@ def main():
         st.metric("Total Pixels", f"{total_pixels:,}")
 
     if modality == "xray":
-        if pct > 1.0:
+        if pct > 0.4:
             st.error("⚠️ Pneumothorax suspected — urgent evaluation recommended.")
         else:
             st.success("✅ No significant pneumothorax detected.")
     else:
-        if pct > 1.0:
+        if pct > 0.4:
             st.warning("⚠️ Lesion/tumor detected — further evaluation advised.")
         else:
             st.success("✅ No significant lesion detected.")
@@ -308,14 +316,25 @@ def main():
     viz_buf = create_visualization(img_np, pred_mask, binary_mask, pct)
     st.image(viz_buf, use_column_width=True)
 
-    st.download_button("Download Visualization PNG", data=viz_buf, file_name="visualization.png", mime="image/png")
+    st.download_button(
+        "Download Visualization PNG",
+        data=viz_buf,
+        file_name="visualization.png",
+        mime="image/png"
+    )
 
     mask_img = (binary_mask * 255).astype(np.uint8)
     mask_pil = Image.fromarray(mask_img)
     mask_buf = io.BytesIO()
     mask_pil.save(mask_buf, format="PNG")
     mask_buf.seek(0)
-    st.download_button("Download Binary Mask PNG", data=mask_buf, file_name="mask.png", mime="image/png")
+
+    st.download_button(
+        "Download Binary Mask PNG",
+        data=mask_buf,
+        file_name="mask.png",
+        mime="image/png"
+    )
 
     st.subheader("Generate PDF Report")
     if st.button("Create & Download PDF Report"):
@@ -327,7 +346,6 @@ def main():
                 "contact": contact or "-"
             }
             try:
-                viz_buf.seek(0)
                 viz_bytes = viz_buf.getvalue()
                 pdf_buf = generate_pdf_report(
                     patient_info=patient_info,
@@ -339,9 +357,13 @@ def main():
                     notes=notes,
                     viz_png_bytes=viz_bytes
                 )
-                pdf_buf.seek(0)
                 st.success("PDF report generated successfully.")
-                st.download_button("Download PDF Report", data=pdf_buf, file_name="medical_report.pdf", mime="application/pdf")
+                st.download_button(
+                    "Download PDF Report",
+                    data=pdf_buf,
+                    file_name="medical_report.pdf",
+                    mime="application/pdf"
+                )
             except Exception as e:
                 st.error(f"Failed to generate PDF: {e}")
 
