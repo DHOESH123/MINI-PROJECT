@@ -8,11 +8,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 # 1. This loads your local .env file if you are testing on your own computer
-load_dotenv() 
-
-# 2. This checks if you are running on Streamlit Cloud and pulls the secret key
-if "OPENAI_API_KEY" in st.secrets:
-    OPENAI_API_KEY= st.secrets["OPENAI_API_KEY"]
+OPENAI_API_KEY= "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"
 
 
 def create_chatbot(pdf_paths, chunk_size=1000, chunk_overlap=100):
