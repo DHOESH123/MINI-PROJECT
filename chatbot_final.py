@@ -3,6 +3,16 @@ from langchain_text_splitters import CharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_classic.chains import RetrievalQA
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+import os
+import streamlit as st
+from dotenv import load_dotenv
+
+# 1. This loads your local .env file if you are testing on your own computer
+load_dotenv() 
+
+# 2. This checks if you are running on Streamlit Cloud and pulls the secret key
+if "OPENAI_API_KEY" in st.secrets:
+    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 
 
 def create_chatbot(pdf_paths, chunk_size=1000, chunk_overlap=100):
@@ -38,7 +48,7 @@ def create_chatbot(pdf_paths, chunk_size=1000, chunk_overlap=100):
     embeddings = OpenAIEmbeddings(
         model="text-embedding-3-small",
         openai_api_base="https://openrouter.ai/api/v1",
-        openai_api_key="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",
+        openai_api_key=OPENAI_API_KEY,
     )
 
     # 4️⃣ Build FAISS vectorstore
@@ -49,7 +59,7 @@ def create_chatbot(pdf_paths, chunk_size=1000, chunk_overlap=100):
         model="openai/gpt-4o-mini",  # or "mistralai/mistral-7b-instruct"
         temperature=0,
         openai_api_base="https://openrouter.ai/api/v1",
-        openai_api_key="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",
+        openai_api_key=OPENAI_API_KEY,
     )
 
     # 6️⃣ Create RetrievalQA pipeline
