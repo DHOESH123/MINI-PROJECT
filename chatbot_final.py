@@ -12,7 +12,7 @@ load_dotenv()
 
 # 2. This checks if you are running on Streamlit Cloud and pulls the secret key
 if "OPENAI_API_KEY" in st.secrets:
-    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+    OPENAI_API_KEY= st.secrets["OPENAI_API_KEY"]
 
 
 def create_chatbot(pdf_paths, chunk_size=1000, chunk_overlap=100):
