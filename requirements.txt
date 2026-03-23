@@ -1,6 +1,6 @@
 pip>=26.0.1
 streamlit
-tensorflow
+tensorflow==2.15.0
 matplotlib
 pillow
 reportlab
